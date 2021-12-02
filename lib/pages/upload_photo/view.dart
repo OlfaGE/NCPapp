@@ -1,5 +1,6 @@
 import 'package:auth_screen/pages/upload_photo/controller.dart';
 import 'package:auth_screen/utils/constants.dart';
+import 'package:auth_screen/utils/screenshotable/screenshotable.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -30,93 +31,99 @@ class UploadPhotoWidgetState extends State<UploadPhotoWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              Container(
-                alignment: Alignment.center,
-                child: TextField(
-                  textAlignVertical: TextAlignVertical.center,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 30,
-                  ),
-                  decoration: InputDecoration(
-                      border: InputBorder.none,
-                      labelText: "Scan Part Barcode",
-                      fillColor: kPrimaryColor),
-                ),
-              ),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () async {
-                    controller.onImageTap();
-                  },
-                  child: Container(
-                    width: 300,
-                    height: 900,
-                    decoration: BoxDecoration(color: kBackgroundColor),
-                    child: controller.file != null
-                        ? Image.file(
-                            controller.file!,
-                            width: 300.0,
-                            height: 900.0,
-                            fit: BoxFit.fitHeight,
-                          )
-                        : Container(
-                            decoration: BoxDecoration(color: kBackgroundColor),
-                            width: 300,
-                            height: 900,
-                            child: Icon(
-                              Icons.camera_alt,
-                              color: Colors.grey[800],
-                            ),
-                          ),
+    return ScreenShotable(
+      screenshotController: controller.screenshotController,
+      child: Scaffold(
+        body: Stack(
+          children: [
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                Container(
+                  alignment: Alignment.center,
+                  child: TextField(
+                    textAlignVertical: TextAlignVertical.center,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 30,
+                    ),
+                    decoration: InputDecoration(
+                        border: InputBorder.none,
+                        labelText: "Scan Part Barcode",
+                        fillColor: kPrimaryColor),
                   ),
                 ),
-              ),
-              Spacer(),
-              FittedBox(
-                  child: Container(
-                margin: EdgeInsets.only(bottom: 60),
-                padding: EdgeInsets.symmetric(horizontal: 3, vertical: 3),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(25),
-                  color: kPrimaryColor,
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () async {
+                      controller.onImageTap();
+                    },
+                    child: Container(
+                      width: 300,
+                      height: 900,
+                      decoration: BoxDecoration(color: kBackgroundColor),
+                      child: controller.file != null
+                          ? Image.file(
+                              controller.file!,
+                              width: 300.0,
+                              height: 900.0,
+                              fit: BoxFit.fitHeight,
+                            )
+                          : Container(
+                              decoration:
+                                  BoxDecoration(color: kBackgroundColor),
+                              width: 300,
+                              height: 900,
+                              child: Icon(
+                                Icons.camera_alt,
+                                color: Colors.grey[800],
+                              ),
+                            ),
+                    ),
+                  ),
                 ),
-                child: controller.file == null
-                    ? null
-                    : Row(
-                        children: <Widget>[
-                          FloatingActionButton.extended(
-                            onPressed: () {
-                              controller.onSendImage();
-                              // Add confirmation code to send to API/Email here
-                            },
-                            label: Text(
-                              "Send Image",
-                              style:
-                                  Theme.of(context).textTheme.button?.copyWith(
-                                        color: Colors.black,
-                                      ),
+                Spacer(),
+                FittedBox(
+                    child: Container(
+                  margin: EdgeInsets.only(bottom: 60),
+                  padding: EdgeInsets.symmetric(horizontal: 3, vertical: 3),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(25),
+                    color: kPrimaryColor,
+                  ),
+                  child: controller.file == null
+                      ? null
+                      : Row(
+                          children: <Widget>[
+                            FloatingActionButton.extended(
+                              onPressed: () {
+                                controller.onSendImageTapped();
+                                // Add confirmation code to send to API/Email here
+                              },
+                              label: Text(
+                                "Send Image",
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .button
+                                    ?.copyWith(
+                                      color: Colors.black,
+                                    ),
+                              ),
+                              icon: Icon(
+                                Icons.check_box,
+                                color: Colors.black,
+                              ),
+                              backgroundColor: kPrimaryColor,
                             ),
-                            icon: Icon(
-                              Icons.check_box,
-                              color: Colors.black,
-                            ),
-                            backgroundColor: kPrimaryColor,
-                          ),
-                        ],
-                      ),
-              ))
-            ],
-          ),
-          _loaderView()
-        ].whereType<Widget>().toList(),
+                          ],
+                        ),
+                ))
+              ],
+            ),
+            _loaderView()
+          ].whereType<Widget>().toList(),
+        ),
       ),
     );
   }

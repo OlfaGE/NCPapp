@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:http/http.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
 class BoxApi {
   final Client _client = Client();
@@ -34,60 +36,6 @@ class BoxApi {
     }
   }
 
-  uploadFilePost(
-    File file,
-  ) async {
-    final accessToken = await _getAccessToken();
-    final fileBinary = base64Encode(file.readAsBytesSync());
-
-    final filename = "${DateTime.now().millisecondsSinceEpoch}.jpg";
-    var headers = {
-      'Authorization': 'Bearer $accessToken',
-      'Content-Type': 'application/x-www-form-urlencoded',
-    };
-
-    var body = {
-      'attributes': '{"name":$filename, "parent":{"id":0}}',
-      'file': fileBinary
-    };
-    final _url = 'https://upload.box.com/api/2.0/files/content';
-    final url = Uri.parse(_url);
-    final response = await _client.post(url, headers: headers, body: body);
-    print(response.body);
-    print(response.statusCode);
-    print(response.reasonPhrase);
-    if (response.statusCode == 200) {
-      final body = json.decode(response.body);
-      return body["access_token"];
-    }
-    // var request = MultipartRequest(
-    //     'POST', Uri.parse('https://upload.box.com/api/2.0/files/content'));
-    // request.fields.addAll({
-    //   'attributes': '{"name":$filename, "parent":{"id":0}}',
-    //   // 'file': fileBinary
-    // });
-    // // request.fields.addAll({'file': fileBinary});
-    // // request.files.add(
-    // //   new MultipartFile.fromBytes(
-    // //     'file',
-    // //     await file.readAsBytes(),
-    // //   ),
-    // // );
-    //
-    // print(request.files);
-    // print(request.fields);
-    // request.headers.addAll(headers);
-    //
-    // StreamedResponse response = await request.send();
-    // print(await response.stream.bytesToString());
-    //
-    // if (response.statusCode == 200) {
-    //   print(await response.stream.bytesToString());
-    // } else {
-    //   print(response.reasonPhrase);
-    // }
-  }
-
   ///
   /// https://developer.box.com/reference/post-files-content/
   /// Parent id is the folder id, 0 means root folder
@@ -96,9 +44,29 @@ class BoxApi {
   uploadFile(
     File file,
   ) async {
-    print(file.path);
+    var multipartFile = await http.MultipartFile.fromPath("file", file.path);
+    return await uploadMultipart(multipartFile);
+  }
+
+  uploadImage(Image image) async {
+    final bytes = await image.toByteData(format: ImageByteFormat.png);
+    if (bytes == null) return;
+    var pic = http.MultipartFile.fromBytes("file", bytes.buffer.asInt8List(),
+        filename: "test.png",
+        contentType: MediaType("application", "octet-stream"));
+    return await uploadMultipart(pic);
+  }
+
+  /// Warning, the multiPartFile if coming from Byte does not have filename, will always file on any provider
+  /// filename must not be null will uploading
+  uploadMultipart(MultipartFile multiPartFile) async {
+    print(multiPartFile.filename);
+    print(multiPartFile.length);
+    print(multiPartFile.contentType);
+    print(multiPartFile.field);
+    print(multiPartFile.isFinalized);
+
     final accessToken = await _getAccessToken();
-    final fileBinary = base64Encode(file.readAsBytesSync());
 
     final filename = "${DateTime.now().millisecondsSinceEpoch}.jpg";
     var headers = {
@@ -111,9 +79,7 @@ class BoxApi {
       'attributes': '{"name": "$filename", "parent":{"id":0}}',
       // 'file': fileBinary
     });
-
-    var pic = await http.MultipartFile.fromPath("file", file.path);
-    request.files.add(pic);
+    request.files.add(multiPartFile);
 
     request.headers.addAll(headers);
 
@@ -129,27 +95,18 @@ class BoxApi {
     }
   }
 
-  uploadFileIO2(File file) async {
+  uploadFileIO(MultipartFile file) async {
     //create multipart request for POST or PATCH method
     var request = http.MultipartRequest("POST", Uri.parse('https://file.io/'));
     //add text fields
+    final expiration = DateTime.now().add(Duration(hours: 1));
     request.fields.addAll({
-      'expires': '2021-12-02T23:04:53.872Z',
+      'expires': expiration.toIso8601String(),
       'maxDownloads': '1',
-      'autoDelete': 'true',
-      'file': '@test.png;type=image/png'
+      'autoDelete': 'true'
     });
-    //create multipart using filepath, string or bytes
-    var pic = await http.MultipartFile.fromPath("file", file.path);
     //add multipart to request
-    request.files.add(pic);
-    // var response = await request.send();
-    //
-    // //Get the response from the server
-    // var responseData = await response.stream.toBytes();
-    // var responseString = String.fromCharCodes(responseData);
-    // print(responseString);
-
+    request.files.add(file);
     StreamedResponse response = await request.send();
     final responseTxt = await response.stream.bytesToString();
     print(responseTxt);

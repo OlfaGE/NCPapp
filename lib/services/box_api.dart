@@ -75,8 +75,12 @@ class BoxApi {
     };
     var request = MultipartRequest(
         'POST', Uri.parse('https://upload.box.com/api/2.0/files/content'));
+    final attributes = {
+      "name": filename,
+      "parent": {"id": 0}
+    };
     request.fields.addAll({
-      'attributes': '{"name": "$filename", "parent":{"id":0}}',
+      'attributes': json.encode(attributes),
       // 'file': fileBinary
     });
     request.files.add(multiPartFile);
